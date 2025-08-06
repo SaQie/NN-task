@@ -21,11 +21,13 @@ class RedisExchangeRateRepository implements ExchangeRateRepository {
 
     private final RedisTemplate<String, String> dateRedisTemplate;
     private final RedisTemplate<String, CurrencyRate> currencyRateRedisTemplate;
+    private final TTLCalculator ttlCalculator = TTLCalculator.create();
 
     @Override
     public void save(CurrencyRateTable table) {
+        // Transakcje na redis - wspomnij o tym
         LocalDate date = table.date();
-        Duration ttl = TTLCalculator.calculateTTL(date);
+        Duration ttl = ttlCalculator.calculateTTL(date);
         table.rates()
                 .forEach(rate -> currencyRateRedisTemplate.opsForValue().set(rate.code(), rate));
 
@@ -34,7 +36,7 @@ class RedisExchangeRateRepository implements ExchangeRateRepository {
 
     @Override
     public boolean ratesAreActual(LocalDate date) {
-        LocalDate properDate = TTLCalculator.recognizeDateIfWeekend(date);
+        LocalDate properDate = ttlCalculator.recognizeDateIfWeekend(date);
         return dateRedisTemplate.hasKey(properDate.toString());
     }
 
@@ -50,7 +52,7 @@ class RedisExchangeRateRepository implements ExchangeRateRepository {
         String redisLastRatesDateRaw = keys.iterator().next();
         LocalDate redisLastRatesDate = LocalDate.parse(redisLastRatesDateRaw);
         Long currentTTL = dateRedisTemplate.getExpire(redisLastRatesDateRaw, TimeUnit.SECONDS);
-        Duration calculatedTTL = TTLCalculator.calculateTTL(redisLastRatesDate);
+        Duration calculatedTTL = ttlCalculator.calculateTTL(redisLastRatesDate);
         long newTtl = currentTTL + calculatedTTL.getSeconds();
         dateRedisTemplate.expire(redisLastRatesDateRaw, newTtl, TimeUnit.SECONDS);
     }

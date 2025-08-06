@@ -18,6 +18,7 @@ public class ExchangeRateSynchronizationScheduler {
 
     @Scheduled(cron = "${nbp.refresh.cron}", zone = "${nbp.refresh.zone}")
     public void refreshExchangeRates() {
+        // ShedLock - wspomnij o tym
         log.info("Refreshing exchange rates...");
 
         ExchangeRateSynchronizer synchronizer = ExchangeRateSynchronizer.create(exchangeRateProvider, exchangeRateRepository);

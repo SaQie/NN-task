@@ -26,7 +26,7 @@ class NbpApiExchangeRateProvider implements ExchangeRateProvider {
     }
 
     @Override
-    public ExchangeRateTableDto fetchCurrentRates() {
+    public ExchangeRateTableDto fetchCurrentRates() throws ClientException{
         ExchangeRateTableDto[] exchangeRateTableDto = webClient.get()
                 .uri(RATES_URL)
                 .retrieve()

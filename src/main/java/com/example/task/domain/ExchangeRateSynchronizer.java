@@ -1,7 +1,9 @@
 package com.example.task.domain;
 
+import com.example.task.application.exception.RatesNotExistException;
 import com.example.task.infrastructure.dto.ExchangeRateTableDto;
 import com.example.task.infrastructure.dto.mapper.Mapper;
+import com.example.task.infrastructure.exception.ClientException;
 import com.example.task.infrastructure.provider.ExchangeRateProvider;
 import com.example.task.infrastructure.repository.ExchangeRateRepository;
 import lombok.AccessLevel;
@@ -30,30 +32,24 @@ public final class ExchangeRateSynchronizer {
         }
 
         log.info("Exchange rates are stale ({}), starting synchronization...", today);
+
         try {
-            fetchAndSaveCurrentRates();
-            log.info("Exchange rates updated successfully for {}.", today);
-        } catch (Exception e) {
-            log.error("Critical failure fetching rates and no cached data available!", e);
-            throw e;
+            ExchangeRateTableDto dto = exchangeRateProvider.fetchCurrentRates();
+            repository.save(Mapper.toCurrencyRate(dto));
+        } catch (ClientException e) {
+            if (repository.ratesExist()) {
+                log.error("Rates exist in cache, but could not fetch current rates! Adjusting current rates...", e);
+                repository.adjustExistingRates();
+                return;
+            }
+            throw new RatesNotExistException("Error fetching rates!", e);
         }
+
+        log.info("Exchange rates updated successfully for {}.", today);
     }
 
     private boolean ratesAreFresh(LocalDate today) {
         return repository.ratesAreActual(today);
-    }
-
-    private void fetchAndSaveCurrentRates() {
-        try {
-            ExchangeRateTableDto dto = exchangeRateProvider.fetchCurrentRates();
-            repository.save(Mapper.toCurrencyRate(dto));
-        } catch (Exception e) {
-            if (repository.ratesExist()) {
-                repository.adjustExistingRates();
-                log.error("Rates exist but could not fetch current rates!", e);
-            }
-            throw e;
-        }
     }
 
 

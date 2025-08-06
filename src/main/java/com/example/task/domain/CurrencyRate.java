@@ -1,5 +1,6 @@
 package com.example.task.domain;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
@@ -10,8 +11,11 @@ import lombok.experimental.Accessors;
 import java.math.BigDecimal;
 import java.math.MathContext;
 
+import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY;
+
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
+@JsonAutoDetect(fieldVisibility = ANY)
 @Accessors(fluent = true)
 public final class CurrencyRate {
 

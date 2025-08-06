@@ -5,8 +5,6 @@ import com.example.task.api.response.ExchangeRateResponse;
 import com.example.task.application.exception.CodeNotFoundException;
 import com.example.task.application.exception.RatesNotExistException;
 import com.example.task.domain.CurrencyRate;
-import com.example.task.domain.ExchangeRateSynchronizer;
-import com.example.task.infrastructure.provider.ExchangeRateProvider;
 import com.example.task.infrastructure.repository.ExchangeRateRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,7 +17,6 @@ import java.time.LocalDate;
 public class ExchangeRateService {
 
     private final ExchangeRateRepository exchangeRateRepository;
-    private final ExchangeRateProvider exchangeRateProvider;
 
     public ExchangeRateResponse process(ExchangeRateQuery query) {
         checkIfRatesExist();
@@ -52,11 +49,6 @@ public class ExchangeRateService {
         if (!ratesExist) {
             throw new RatesNotExistException("Rates Not Exist");
         }
-    }
-
-    public void synchronizeManually() {
-        ExchangeRateSynchronizer synchronizer = ExchangeRateSynchronizer.create(exchangeRateProvider, exchangeRateRepository);
-        synchronizer.synchronizeIfNeeded();
     }
 
 }
