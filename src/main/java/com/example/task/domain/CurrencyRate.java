@@ -13,7 +13,7 @@ import java.math.MathContext;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
-public class CurrencyRate {
+public final class CurrencyRate {
 
     private final String currency;
     private final String code;

@@ -13,4 +13,10 @@ public interface ExchangeRateRepository {
     boolean ratesAreActual(LocalDate date);
 
     Optional<CurrencyRate> findByCode(String code);
+
+    void adjustExistingRates();
+
+    boolean ratesExist();
+
+    LocalDate getRatesDate();
 }

@@ -11,7 +11,7 @@ import java.util.List;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
-public class CurrencyRateTable {
+public final class CurrencyRateTable {
 
     private final LocalDate date;
     private final List<CurrencyRate> rates;

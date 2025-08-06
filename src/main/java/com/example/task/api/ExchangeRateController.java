@@ -5,10 +5,7 @@ import com.example.task.api.response.ExchangeRateResponse;
 import com.example.task.application.ExchangeRateService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/rates")
@@ -22,6 +19,13 @@ public class ExchangeRateController {
     public ResponseEntity<ExchangeRateResponse> exchangeRate(@ModelAttribute ExchangeRateQuery query) {
         ExchangeRateResponse response = exchangeRateService.process(query);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/synchronize")
+    public ResponseEntity<String> synchronizeManually() {
+        // Endpoint only for user with admin role in the future
+        exchangeRateService.synchronizeManually();
+        return ResponseEntity.ok("Synchronized");
     }
 
 }

@@ -1,15 +1,19 @@
-package com.example.task.domain;
+package com.example.task.infrastructure.repository;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-public class TTLCalculator {
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+final class TTLCalculator {
 
     private static final int ONE_DAY_IN_SECONDS = 86400;
 
-    public static Duration calculateTTL(LocalDate date) {
+    static Duration calculateTTL(LocalDate date) {
         long secondsUntilMidnight = Duration.between(LocalDateTime.now(),
                 date.plusDays(1).atStartOfDay()).getSeconds();
 
@@ -20,7 +24,7 @@ public class TTLCalculator {
         return Duration.ofSeconds(secondsUntilMidnight);
     }
 
-    public static LocalDate recognizeDateIfWeekend(LocalDate date) {
+    static LocalDate recognizeDateIfWeekend(LocalDate date) {
         if (isSunday(date)) {
             return date.minusDays(2);
         }
