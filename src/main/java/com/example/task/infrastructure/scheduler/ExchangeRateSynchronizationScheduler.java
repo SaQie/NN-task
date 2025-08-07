@@ -19,8 +19,8 @@ public class ExchangeRateSynchronizationScheduler {
 
     @Scheduled(cron = "${nbp.refresh.cron}", zone = "${nbp.refresh.zone}")
     public void refreshExchangeRates() {
-        boolean locked = exchangeRateRepository.lock();
-        if (!locked) {
+        boolean acquired = exchangeRateRepository.lock();
+        if (!acquired) {
             log.info("Another instance is synchronizing exchange rates, skipping...");
             return;
         }
