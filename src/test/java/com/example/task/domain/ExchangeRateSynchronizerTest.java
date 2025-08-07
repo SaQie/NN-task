@@ -50,7 +50,7 @@ class ExchangeRateSynchronizerTest {
         // then
         assertEquals(1, rateProvider.getFetchCurrentRatesCallCount());
         assertEquals(1, repository.getSaveCallCount());
-        assertEquals(LocalDate.now(), repository.getRatesDate());
+        assertEquals(LocalDate.now(), repository.findLastRatesDate().get());
         assertTrue(repository.ratesExist());
     }
 
@@ -82,8 +82,7 @@ class ExchangeRateSynchronizerTest {
         // then
         assertEquals(1, rateProvider.getFetchCurrentRatesCallCount());
         assertEquals(0, repository.getSaveCallCount());
-        assertEquals(1, repository.getAdjustExistingRatesCallCount());
-        assertEquals(LocalDate.now().minusDays(1), repository.getRatesDate());
+        assertEquals(LocalDate.now().minusDays(1), repository.findLastRatesDate().get());
         assertTrue(repository.ratesExist());
     }
 }

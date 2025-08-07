@@ -36,7 +36,8 @@ public class ExchangeRateService {
     }
 
     private LocalDate getRatesDate() {
-        return exchangeRateRepository.getRatesDate();
+        return exchangeRateRepository.findLastRatesDate()
+                .orElseThrow(() -> new RatesNotExistException("Rates Not Exist"));
     }
 
     private CurrencyRate getCurrencyRate(String code) {

@@ -4,6 +4,7 @@ import com.example.task.domain.CurrencyRate;
 import com.example.task.domain.CurrencyRateTable;
 import com.example.task.infrastructure.repository.ExchangeRateRepository;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -22,9 +23,14 @@ public class FakeExchangeRateRepository implements ExchangeRateRepository {
     @Getter
     private int ratesAreActualCallCount;
     @Getter
-    private int adjustExistingRatesCallCount;
-    @Getter
     private int ratesExistCallCount;
+    @Getter
+    private int unlockCallCount;
+    @Getter
+    private int lockCallCount;
+
+    @Setter
+    private boolean locked;
 
     @Override
     public void save(CurrencyRateTable currencyRateTable) {
@@ -45,19 +51,25 @@ public class FakeExchangeRateRepository implements ExchangeRateRepository {
     }
 
     @Override
-    public void adjustExistingRates() {
-        adjustExistingRatesCallCount++;
-    }
-
-    @Override
     public boolean ratesExist() {
         ratesExistCallCount++;
         return date != null;
     }
 
     @Override
-    public LocalDate getRatesDate() {
-        return date;
+    public Optional<LocalDate> findLastRatesDate() {
+        return Optional.ofNullable(date);
+    }
+
+    @Override
+    public void unlock() {
+        unlockCallCount++;
+    }
+
+    @Override
+    public boolean lock() {
+        lockCallCount++;
+        return locked;
     }
 
     public void setActualRatesDate(LocalDate date) {

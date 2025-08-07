@@ -1,14 +1,17 @@
 package com.example.task.infrastructure.repository;
 
-import com.example.task.application.exception.RatesNotExistException;
 import com.example.task.domain.CurrencyRate;
 import com.example.task.domain.CurrencyRateTable;
 import lombok.AllArgsConstructor;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.SessionCallback;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Repository;
 
-import java.time.Duration;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -18,58 +21,79 @@ import java.util.concurrent.TimeUnit;
 class RedisExchangeRateRepository implements ExchangeRateRepository {
 
     private static final String DATE_PATTERN = "????-??-??";
+    private static final String LOCK_KEY = "lock:synchronization:";
+    private static final long LOCK_TTL_SECONDS = 3600; // 1h
 
-    private final RedisTemplate<String, String> dateRedisTemplate;
-    private final RedisTemplate<String, CurrencyRate> currencyRateRedisTemplate;
-    private final TTLCalculator ttlCalculator = TTLCalculator.create();
+
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final DateCalculator dateCalculator = DateCalculator.create();
 
     @Override
     public void save(CurrencyRateTable table) {
-        // Transakcje na redis - wspomnij o tym
-        LocalDate date = table.date();
-        Duration ttl = ttlCalculator.calculateTTL(date);
-        table.rates()
-                .forEach(rate -> currencyRateRedisTemplate.opsForValue().set(rate.code(), rate));
+        executeInTransaction(table);
+    }
 
-        dateRedisTemplate.opsForValue().set(date.toString(), "1", ttl);
+    private void executeInTransaction(CurrencyRateTable table) {
+        Optional<LocalDate> dateOptional = findLastRatesDate();
+        redisTemplate.execute(new SessionCallback<List<Object>>() {
+            @Override
+            @SuppressWarnings("unchecked")
+            public <K, V> List<Object> execute(RedisOperations<K, V> operations) throws DataAccessException {
+                RedisOperations<String, Object> ops = (RedisOperations<String, Object>) operations;
+                ops.multi();
+
+                ValueOperations<String, Object> vo = ops.opsForValue();
+                for (CurrencyRate rate : table.rates()) {
+                    vo.set(rate.code(), rate);
+                }
+
+                String dateKey = table.date().toString();
+                vo.set(dateKey, "1");
+
+                dateOptional.ifPresent(date -> ops.delete(dateKey));
+
+                return ops.exec();
+            }
+        });
     }
 
     @Override
     public boolean ratesAreActual(LocalDate date) {
-        LocalDate properDate = ttlCalculator.recognizeDateIfWeekend(date);
-        return dateRedisTemplate.hasKey(properDate.toString());
+        LocalDate properDate = dateCalculator.recognizeDateIfWeekend(date);
+        return redisTemplate.hasKey(properDate.toString());
     }
 
     @Override
     public Optional<CurrencyRate> findByCode(String code) {
-        CurrencyRate rate = currencyRateRedisTemplate.opsForValue().get(code);
+        CurrencyRate rate = (CurrencyRate) redisTemplate.opsForValue().get(code);
         return Optional.ofNullable(rate);
     }
 
     @Override
-    public void adjustExistingRates() {
-        Set<String> keys = dateRedisTemplate.keys(DATE_PATTERN);
-        String redisLastRatesDateRaw = keys.iterator().next();
-        LocalDate redisLastRatesDate = LocalDate.parse(redisLastRatesDateRaw);
-        Long currentTTL = dateRedisTemplate.getExpire(redisLastRatesDateRaw, TimeUnit.SECONDS);
-        Duration calculatedTTL = ttlCalculator.calculateTTL(redisLastRatesDate);
-        long newTtl = currentTTL + calculatedTTL.getSeconds();
-        dateRedisTemplate.expire(redisLastRatesDateRaw, newTtl, TimeUnit.SECONDS);
-    }
-
-    @Override
     public boolean ratesExist() {
-        Set<String> matchingKeys = dateRedisTemplate.keys(DATE_PATTERN);
+        Set<String> matchingKeys = redisTemplate.keys(DATE_PATTERN);
         return !matchingKeys.isEmpty();
     }
 
     @Override
-    public LocalDate getRatesDate() {
-        if (!ratesExist()) {
-            throw new RatesNotExistException("Rates not exist");
+    public Optional<LocalDate> findLastRatesDate() {
+        Set<String> keys = redisTemplate.keys(DATE_PATTERN);
+        if (keys.isEmpty()) {
+            return Optional.empty();
         }
-        Set<String> keys = dateRedisTemplate.keys(DATE_PATTERN);
         String redisLastRatesDateRaw = keys.iterator().next();
-        return LocalDate.parse(redisLastRatesDateRaw);
+        return Optional.of(LocalDate.parse(redisLastRatesDateRaw));
+    }
+
+    @Override
+    public void unlock() {
+        redisTemplate.delete(LOCK_KEY);
+    }
+
+    @Override
+    public boolean lock() {
+        Boolean locked = redisTemplate.opsForValue()
+                .setIfAbsent(LOCK_KEY, "locked", LOCK_TTL_SECONDS, TimeUnit.SECONDS);
+        return locked != null && locked;
     }
 }

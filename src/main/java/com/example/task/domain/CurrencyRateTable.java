@@ -19,4 +19,5 @@ public final class CurrencyRateTable {
     public static CurrencyRateTable create(LocalDate date, List<CurrencyRate> rates) {
         return new CurrencyRateTable(date, rates);
     }
+
 }

@@ -38,8 +38,7 @@ public final class ExchangeRateSynchronizer {
             repository.save(Mapper.toCurrencyRate(dto));
         } catch (ClientException e) {
             if (repository.ratesExist()) {
-                log.error("Rates exist in cache, but could not fetch current rates! Adjusting current rates...", e);
-                repository.adjustExistingRates();
+                log.error("Rates exist in cache, but could not fetch current rates!", e);
                 return;
             }
             throw new RatesNotExistException("Error fetching rates!", e);
