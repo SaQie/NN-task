@@ -19,7 +19,7 @@ public class ApplicationReadyEventHandler implements ApplicationListener<Applica
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
-        ExchangeRateSynchronizer initializer = ExchangeRateSynchronizer.create(exchangeRateProvider, repository);
-        initializer.synchronizeIfNeeded();
+        ExchangeRateSynchronizer synchronizer = ExchangeRateSynchronizer.create(exchangeRateProvider, repository);
+        synchronizer.synchronizeIfNeeded();
     }
 }
