@@ -33,6 +33,10 @@ public final class CurrencyRate {
         return new CurrencyRate(currency, code, bid, ask);
     }
 
+    public static CurrencyRate pln(){
+        return new CurrencyRate("Polish Zloty","PLN",new BigDecimal("1"),new BigDecimal("1"));
+    }
+
     public BigDecimal convertTo(CurrencyRate targetCurrency) {
         BigDecimal sourceToPln = this.ask();
         BigDecimal plnToTarget = BigDecimal.ONE.divide(targetCurrency.bid(), MathContext.DECIMAL64);

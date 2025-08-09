@@ -2,6 +2,7 @@ package com.example.task.infrastructure.repository;
 
 import com.example.task.domain.CurrencyRate;
 import com.example.task.domain.CurrencyRateTable;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisOperations;
@@ -11,6 +12,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -25,6 +27,7 @@ class RedisExchangeRateRepository implements ExchangeRateRepository {
     private static final long LOCK_TTL_SECONDS = 3600; // 1h
 
 
+    private final ObjectMapper objectMapper;
     private final RedisTemplate<String, Object> redisTemplate;
     private final DateCalculator dateCalculator = DateCalculator.create();
 
@@ -50,7 +53,7 @@ class RedisExchangeRateRepository implements ExchangeRateRepository {
                 String dateKey = table.date().toString();
                 vo.set(dateKey, "1");
 
-                dateOptional.ifPresent(date -> ops.delete(dateKey));
+                dateOptional.ifPresent(date -> ops.delete(date.toString()));
 
                 return ops.exec();
             }
@@ -65,8 +68,12 @@ class RedisExchangeRateRepository implements ExchangeRateRepository {
 
     @Override
     public Optional<CurrencyRate> findByCode(String code) {
-        CurrencyRate rate = (CurrencyRate) redisTemplate.opsForValue().get(code);
-        return Optional.ofNullable(rate);
+        Object rawValue = redisTemplate.opsForValue().get(code);
+        if (rawValue == null) {
+            return Optional.empty();
+        }
+        CurrencyRate currencyRate = objectMapper.convertValue(rawValue, CurrencyRate.class);
+        return Optional.of(currencyRate);
     }
 
     @Override

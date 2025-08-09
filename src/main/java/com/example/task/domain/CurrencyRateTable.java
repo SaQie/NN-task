@@ -17,6 +17,7 @@ public final class CurrencyRateTable {
     private final List<CurrencyRate> rates;
 
     public static CurrencyRateTable create(LocalDate date, List<CurrencyRate> rates) {
+        rates.add(CurrencyRate.pln());
         return new CurrencyRateTable(date, rates);
     }
 

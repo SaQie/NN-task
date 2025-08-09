@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Mapper {
@@ -14,7 +15,7 @@ public final class Mapper {
     public static CurrencyRateTable toCurrencyRate(ExchangeRateTableDto tableDto) {
         List<CurrencyRate> currencyRates = tableDto.rates()
                 .stream()
-                .map(dto -> CurrencyRate.create(dto.currency(), dto.code(), dto.bid(), dto.ask())).toList();
+                .map(dto -> CurrencyRate.create(dto.currency(), dto.code(), dto.bid(), dto.ask())).collect(Collectors.toList());
         return CurrencyRateTable.create(tableDto.effectiveDate(), currencyRates);
     }
 
